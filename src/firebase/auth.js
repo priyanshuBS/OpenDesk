@@ -1,57 +1,59 @@
 import { auth, db } from "./config";
 import {
   createUserWithEmailAndPassword,
-  updateProfile,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
+  updateProfile,
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import toast from "react-hot-toast";
 
 export const registerWithEmail = async ({
   fullName,
   email,
   password,
-  role = "citizen",
+  role = "admin",
 }) => {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
-
-    await updateProfile(result.user, { displayName: fullName });
-
-    await setDoc(doc(db, "users", result.user.uid), {
-      fullName: role === "citizen" ? fullName : null,
+    await updateProfile(result?.user, { displayName: fullName });
+    await setDoc(doc(db, "users", result?.user?.uid), {
+      fullName,
       email,
       role,
-      isVerified: role === "citizen" ? true : false,
     });
-
-    return result.user;
+    toast.success("User Registered successfully!");
+    return result?.user;
   } catch (error) {
-    console.error(
-      "Failed to register user with email & password:",
-      error.message
-    );
-    throw error;
+    toast.error("Failed to Register user!");
   }
 };
 
-export const loginWithEmail = async (email, password) => {
+export const loginWithEmail = async ({ email, password }) => {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    return result.user;
+    const userRef = doc(db, "users", result.user.uid);
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      toast.success("Login successfully!");
+      return { ...result.user, role: userData.role };
+    } else {
+      toast.error("User data not found!");
+      return null;
+    }
   } catch (error) {
-    console.error("Failed to login:", error.message);
-    throw error;
+    toast.error("Failed to login user!");
   }
 };
 
-export const loginWithGoogle = async (role = "citizen") => {
+export const loginWithGoogle = async () => {
   try {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+    const user = result?.user;
 
     const userRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userRef);
@@ -60,22 +62,21 @@ export const loginWithGoogle = async (role = "citizen") => {
       await setDoc(userRef, {
         fullName: user.displayName,
         email: user.email,
-        role,
-        isVerified: true,
+        role: "user",
       });
     }
 
-    return user;
+    toast.success("SignIn with Google successfull!");
   } catch (error) {
-    console.error("Failed to login with Google:", error.message);
-    throw error;
+    toast.error("Failed to signin with google!");
   }
 };
 
 export const logOut = async () => {
   try {
     await signOut(auth);
+    toast.success("Logout successfull!");
   } catch (error) {
-    console.error("Logout failed:", error.message);
+    toast.error("Failed to logout");
   }
 };
