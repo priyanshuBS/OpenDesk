@@ -9,58 +9,66 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-export const registerWithEmail = async (
+export const registerWithEmail = async ({
   fullName,
   email,
   password,
-  role = "citizen"
-) => {
+  role = "citizen",
+}) => {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(result?.user, { displayName: fullName });
 
-    await setDoc(doc(db, "users", result?.user?.uid), {
-      fullName,
+    await updateProfile(result.user, { displayName: fullName });
+
+    await setDoc(doc(db, "users", result.user.uid), {
+      fullName: role === "citizen" ? fullName : null,
       email,
       role,
       isVerified: role === "citizen" ? true : false,
     });
 
-    return result?.user;
+    return result.user;
   } catch (error) {
-    console.log("Failed to register user with email & password!");
+    console.error(
+      "Failed to register user with email & password:",
+      error.message
+    );
+    throw error;
   }
 };
 
 export const loginWithEmail = async (email, password) => {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    return result?.user;
+    return result.user;
   } catch (error) {
-    console.log(error);
+    console.error("Failed to login:", error.message);
+    throw error;
   }
 };
 
-export const loginWithGoogle = async () => {
+export const loginWithGoogle = async (role = "citizen") => {
   try {
-    const result = await signInWithPopup(auth, GoogleAuthProvider);
-    const user = result?.user;
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
 
-    const userRef = doc(db, "users", user?.uid);
+    const userRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userRef);
 
     if (!docSnap.exists()) {
-      await setDoc(doc(db, "users", user?.uid), {
-        fullName: user?.displayName,
-        email: user?.email,
-        role: "citizen",
+      await setDoc(userRef, {
+        fullName: user.displayName,
+        email: user.email,
+        role,
         isVerified: true,
       });
     }
 
     return user;
   } catch (error) {
-    console.log(error);
+    console.error("Failed to login with Google:", error.message);
+    throw error;
   }
 };
 
@@ -68,6 +76,6 @@ export const logOut = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.log("logout failed");
+    console.error("Logout failed:", error.message);
   }
 };
