@@ -57,7 +57,6 @@ export const loginWithGoogle = async () => {
 
     const userRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userRef);
-
     if (!docSnap.exists()) {
       await setDoc(userRef, {
         fullName: user.displayName,
@@ -65,8 +64,9 @@ export const loginWithGoogle = async () => {
         role: "user",
       });
     }
-
+    const userData = docSnap.data();
     toast.success("SignIn with Google successfull!");
+    return { user, role: userData?.role || "user" };
   } catch (error) {
     toast.error("Failed to signin with google!");
   }
@@ -75,6 +75,7 @@ export const loginWithGoogle = async () => {
 export const logOut = async () => {
   try {
     await signOut(auth);
+    localStorage.removeItem("user");
     toast.success("Logout successfull!");
   } catch (error) {
     toast.error("Failed to logout");

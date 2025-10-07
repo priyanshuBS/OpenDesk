@@ -7,12 +7,18 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  console.log("User: ", user);
   const isLoggedIn = user ? true : false;
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         const docSnap = await getDoc(doc(db, "users", currentUser?.uid));
         if (docSnap.exists()) {
+          localStorage.setItem(
+            "user",
+            JSON.stringify({ ...currentUser, ...docSnap.data() })
+          );
+          console.log({ ...currentUser, ...docSnap.data() });
           setUser({ ...currentUser, ...docSnap.data() });
         } else {
           setUser(null);
