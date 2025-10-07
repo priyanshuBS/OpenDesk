@@ -14,7 +14,7 @@ export const registerWithEmail = async ({
   fullName,
   email,
   password,
-  role = "admin",
+  role = "user",
 }) => {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);

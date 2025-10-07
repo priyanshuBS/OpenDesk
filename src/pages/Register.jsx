@@ -20,6 +20,12 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     await registerWithEmail(formData);
+    setFormData({
+      fullName: "",
+      email: "",
+      password: "",
+    });
+    navigate("/login");
   };
 
   const handleGoogleAuth = async () => {

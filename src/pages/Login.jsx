@@ -23,6 +23,10 @@ export default function Login() {
     } else {
       navigate("/home");
     }
+    setFormData({
+      email: "",
+      password: "",
+    });
   };
 
   const handleGoogleAuth = async () => {
